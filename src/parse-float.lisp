@@ -1,7 +1,5 @@
 ;;; -*- coding:utf-8; mode:lisp -*-
 
-(ql:quickload :alexandria)
-
 (defpackage :svmformat.parse-float
   (:use :cl :alexandria)
   (:export #:parse-float))
