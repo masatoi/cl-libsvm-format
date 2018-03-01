@@ -75,7 +75,8 @@ string (i.e. cannot start with #\+ or #\-)."
 
   (defun parse-float (string &key (start 0) (end (length string))
                                (radix 10) (junk-allowed nil)
-                               (decimal-character #\.))
+                               (decimal-character #\.)
+                               (exponent-character #\e))
     "Similar to PARSE-INTEGER, but parses a floating point value and
   returns the value as the specified TYPE (by default
   *READ-DEFAULT-FLOAT-FORMAT*). The DECIMAL-CHARACTER (by default #\.)
@@ -87,15 +88,16 @@ string (i.e. cannot start with #\+ or #\-)."
              (type valid-radix radix)
              (type string-index start)
              (type bounding-index end)
-             (type character decimal-character))
+             (type character decimal-character exponent-character))
     (let* ((sign 1)                       ; sign of the float
            (digits 0)                     ; number of decimal digits
            (index start)
            (integer-part nil)             ; parts of the value
            (decimal-part 0)
+           (exponent-part 0)
            (result nil))                   ; final result
       (declare (type string-index index)
-               (type integer sign)
+               (type (SIGNED-BYTE 64) sign exponent-part)
                (type (or null (SIGNED-BYTE 64)) integer-part decimal-part))
       (labels ((parse-sign ()
                  (if (= index end)
@@ -133,6 +135,11 @@ string (i.e. cannot start with #\+ or #\-)."
                             #'parse-decimal-part)
                            ((null integer-part)
                             #'parse-finish)
+                           ((and (char= char exponent-character)
+                                 (= radix 10))
+                            (setf index (+ 1 index)
+                                  decimal-part 0)
+                            #'parse-exponent-part)
                            (t #'parse-finish))))))
 
                (parse-decimal-part ()
@@ -154,7 +161,23 @@ string (i.e. cannot start with #\+ or #\-)."
                        (progn
                          (unless decimal-part
                            (setf decimal-part 0))
-                         #'parse-finish))))
+                         (if (and (= radix 10)
+                                  (char= (char string index) exponent-character))
+                             (progn
+                               (incf index)
+                               #'parse-exponent-part)
+                             #'parse-finish)))))
+               
+               (parse-exponent-part ()
+                 (multiple-value-bind (value position)
+                     (parse-integer string
+                                    :start index
+                                    :end end
+                                    :junk-allowed t)
+                   (declare (type bounding-index position))
+                   (setf exponent-part (or value 0)
+                         index position)
+                   #'parse-finish))
 
                (parse-finish ()
                  (if integer-part
@@ -163,7 +186,8 @@ string (i.e. cannot start with #\+ or #\-)."
                          (setf result (* sign (+ (coerce integer-part 'single-float)
                                                  (* (coerce decimal-part 'single-float)
                                                     (expt (coerce radix 'single-float)
-                                                          (coerce (- digits) 'single-float))))))
+                                                          (coerce (- digits) 'single-float))))
+                                         (expt 10 (coerce exponent-part 'single-float))))
                          (simple-parse-error "junk in string ~S." string))
                      (unless junk-allowed
                        (simple-parse-error "junk in string ~S." string)))
@@ -171,6 +195,7 @@ string (i.e. cannot start with #\+ or #\-)."
         (declare (dynamic-extent #'parse-sign
                                  #'parse-integer-part
                                  #'parse-decimal-part
+                                 #'parse-exponent-part
                                  #'parse-finish))
 
         (loop with parser = #'parse-sign
@@ -178,7 +203,7 @@ string (i.e. cannot start with #\+ or #\-)."
               do (setf parser (funcall (the function parser)))
               finally (return (values result index)))))))
 
-;; (time (loop repeat 1000000 do (parse-float:parse-float "123.3032")))
+;; (time (loop repeat 1000000 do (parse-float "123.3032")))
 
 ;; Evaluation took:
 ;;   0.315 seconds of real time
