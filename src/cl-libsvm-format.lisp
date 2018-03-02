@@ -11,9 +11,7 @@
 
 (eval-when (:compile-toplevel)
   (defparameter *optimize-settings*
-    '(optimize (speed 3) (safety 0) (debug 0))
-    ;; '(optimize (speed 0) (safety 3) (debug 3))
-    ))
+    '(optimize (speed 3) (safety 0) (debug 0))))
 
 (defmacro defn (function-spec (&rest arg-specs) &body body)
   (assert (listp function-spec))
@@ -50,6 +48,7 @@
   (offset      0 :type fixnum)
   (space-count 0 :type fixnum)
   (tag :START :type keyword)
+  label-parser
   row
   row-ptr
   result
@@ -68,10 +67,13 @@
           (state-row state) (state-row-ptr state)
           (state-result state) (state-result-ptr state)))
 
-(defun make-state (buffer-size field-size)
+(defun make-state (buffer-size field-size &key (label-type 'fixnum))
   (%make-state
    :buffer (make-string buffer-size :initial-element #\Null)
-   :field  (make-string field-size  :initial-element #\Null)))
+   :field  (make-string field-size  :initial-element #\Null)
+   :label-parser (ecase label-type
+                   (fixnum #'parse-integer)
+                   (single-float #'parse-float))))
 
 (defn (cell-input null) ((state state) (char character))
   (tlet ((field  (state-field state)  (simple-array character))
@@ -89,7 +91,7 @@
               (case (state-tag state)
                 (:VALUE (parse-float cell))
                 (:INDEX (parse-integer cell))
-                (:LABEL (parse-integer cell)))))
+                (:LABEL (funcall (state-label-parser state) cell)))))
         (setf (state-offset state) 0) ; initialize offset
         (if (null (state-row state))
             (setf (state-row state)           (cons cell-data nil)
@@ -169,16 +171,13 @@
     (row-finish state))
   (state-result state))
 
-(defun parse-stream (stream &key (buffer-size 8192) (field-size 1024))
+(defun parse-stream (stream &key (buffer-size 8192) (field-size 1024) (label-type 'fixnum))
   (declare (optimize (speed 3) (space 0) (debug 0) (safety 0)))
   (declare (type fixnum buffer-size field-size))
-  (let ((state (make-state buffer-size field-size)))
-    ;; (declare (inline extend-field cell-input cell-finish row-finish parse finish))
+  (let ((state (make-state buffer-size field-size :label-type label-type)))
     (loop for size = (read-sequence (state-buffer state) stream)
           until (= size 0)
-          do
-             ;;(print state)
-             (parse size state)
+          do (parse size state)
           finally (return (finish state)))))
 
 ;; (defparameter kaggle-mnist1-libsvm
@@ -186,27 +185,40 @@
 ;; ")
 
 ;; (with-input-from-string (s kaggle-mnist1-libsvm)
-;;   (parse-stream s :buffer-size 100 :field-size 10))
+;;   (parse-stream s :buffer-size 100 :field-size 10 :label-type 'single-float))
 
-(defun float-label-type? (file &key (external-format #+clisp system::*default-file-encoding*
+(defun first-label-integer-p (file &key (external-format #+clisp system::*default-file-encoding*
                                                      #+allegro excl:*default-external-format*
                                                      #+sbcl :utf-8))
   (with-open-file (stream file :direction :input :external-format external-format
                                #+clisp :buffered #+clisp t
                                #+allegro :mapped #+allegro t)
-    (let ((line (read-line stream)))
-      (position #\. (subseq line 0 (position #\Space line))))))
+    (let* ((line (read-line stream))
+           (label (subseq line 0 (position #\Space line))))
+      (handler-case
+          (parse-integer label)
+        (error (e)
+          (declare (ignore e))
+          nil)
+        (t (result)
+          result)))))
+
+(time (first-label-integer-p "/home/wiz/datasets/regression/float-label"))
 
 (defun parse-file (file &key (external-format #+clisp system::*default-file-encoding*
                                               #+allegro excl:*default-external-format*
                                               #+sbcl :utf-8)
                           (buffer-size 8192) (field-size 1024))
-  (if (null (probe-file file))
-      (error "can't open file")
-      (with-open-file (stream file :direction :input :external-format external-format
-                                   #+clisp :buffered #+clisp t
-                                   #+allegro :mapped #+allegro t)
-        (parse-stream stream :buffer-size buffer-size :field-size field-size))))
+  (let ((label-type
+          (if (first-label-integer-p file :external-format external-format)
+              'fixnum
+              'single-float)))
+    (if (null (probe-file file))
+        (error "can't open file")
+        (with-open-file (stream file :direction :input :external-format external-format
+                                     #+clisp :buffered #+clisp t
+                                     #+allegro :mapped #+allegro t)
+          (parse-stream stream :buffer-size buffer-size :field-size field-size :label-type label-type)))))
 
 ;; (require :sb-sprof)
 
