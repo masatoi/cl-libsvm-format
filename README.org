@@ -49,3 +49,9 @@ ros install masatoi/cl-libsvm-format
 ;;  0.533333 678 0.992157 679 0.992157 680 0.992157 681 0.831373 682 0.529412 683
 ;;  0.517647 684 0.0627451)
 #+END_SRC
+
+** Author
+Satoshi Imai (satoshi.imai@gmail.com)
+
+** Licence
+This software is released under the MIT License, see LICENSE.txt.
