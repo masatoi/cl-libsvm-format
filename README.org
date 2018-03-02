@@ -1,7 +1,7 @@
 * Cl-Libsvm-Format 
 
-[[http://quickdocs.org/cl-online-learning/][http://quickdocs.org/badge/cl-libsvm-format.svg]]
-[[https://travis-ci.org/masatoi/cl-online-learning][https://travis-ci.org/masatoi/cl-libsvm-format.svg?branch=master]]
+[[http://quickdocs.org/cl-libsvm-format/][http://quickdocs.org/badge/cl-libsvm-format.svg]]
+[[https://travis-ci.org/masatoi/cl-libsvm-format][https://travis-ci.org/masatoi/cl-libsvm-format.svg?branch=master]]
 
 A fast LibSVM data format reader for Common Lisp.
 
