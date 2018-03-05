@@ -18,6 +18,13 @@
     '(1 1 -0.555556 2 0.25 3 -0.864407 4 -0.916667)
     :test #'equalp)
 
+(is (nth-value
+     1
+     (parse-file (merge-pathnames
+                  #P"tests/datasets/iris.scale"
+                  (asdf:system-source-directory :cl-libsvm-format))))
+    4)
+
 (is (parse-file (merge-pathnames
                  #P"tests/datasets/float-label"
                  (asdf:system-source-directory :cl-libsvm-format)))
@@ -27,6 +34,13 @@
        -0.993284 8 -0.926592 9 -0.947685 10 -0.998157 11 -0.987471 12 0.52595997))
     :test #'equalp)
 
+(is (nth-value
+     1
+     (parse-file (merge-pathnames
+                  #P"tests/datasets/float-label"
+                  (asdf:system-source-directory :cl-libsvm-format))))
+    12)
+    
 (is (with-input-from-string (s kaggle-mnist)
       (parse-stream s :buffer-size 100 :field-size 10))
     '((4 151 0.196078 152 0.878431 160 0.27451 161 0.113725 179 0.47450998 180
