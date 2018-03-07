@@ -13,6 +13,8 @@ ros install masatoi/cl-libsvm-format
 
 ** Usage
 
+SVMFORMAT:PARSE-FILE returns the result of read the data as a list and the number of features.
+
 #+BEGIN_SRC lisp
 (ql:quickload :cl-libsvm-format)
 
@@ -48,6 +50,10 @@ ros install masatoi/cl-libsvm-format
 ;;  0.992157 654 0.992157 655 0.992157 656 0.956863 657 0.521569 658 0.0431373 677
 ;;  0.533333 678 0.992157 679 0.992157 680 0.992157 681 0.831373 682 0.529412 683
 ;;  0.517647 684 0.0627451)
+
+;;; Number of features
+(nth-value 1 (svmformat:parse-file "/home/wiz/datasets/mnist.scale"))
+;; => 780
 #+END_SRC
 
 ** Author
