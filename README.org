@@ -13,14 +13,20 @@ ros install masatoi/cl-libsvm-format
 
 ** Usage
 
-SVMFORMAT:PARSE-FILE returns the result of read the data as a list and the number of features.
+SVMFORMAT:PARSE-FILE returns the dataset list and the estimated number of dimensions of the data. 
+One datum is a list in which the first element is a class label or a target of regression, and the rest are alternate with the index and its value.
 
 #+BEGIN_SRC lisp
 (ql:quickload :cl-libsvm-format)
 
-(defparameter mnist (svmformat:parse-file "/home/wiz/datasets/mnist.scale"))
+(multiple-value-bind (dataset dim)
+    (svmformat:parse-file "/home/wiz/datasets/mnist.scale")
+  (defparameter mnist-dataset dataset)
+  (defparameter mnist-dimension dim))
 
-(car mnist)
+;;; First datum
+
+(car mnist-dataset)
 ;; (5 153 0.0117647005 154 0.0705882 155 0.0705882 156 0.0705882 157 0.494118 158
 ;;  0.533333 159 0.686275 160 0.101961 161 0.65098 162 1.0 163 0.968627 164
 ;;  0.498039 177 0.117647 178 0.141176 179 0.368627 180 0.603922 181 0.666667 182
@@ -52,8 +58,8 @@ SVMFORMAT:PARSE-FILE returns the result of read the data as a list and the numbe
 ;;  0.517647 684 0.0627451)
 
 ;;; Number of features
-(nth-value 1 (svmformat:parse-file "/home/wiz/datasets/mnist.scale"))
-;; => 780
+
+mnist-dimension ; => 780
 #+END_SRC
 
 ** Author
