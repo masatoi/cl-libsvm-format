@@ -4,14 +4,14 @@
 
 (defsystem "cl-libsvm-format"
   :version "0.1.0"
-  :author ""
-  :license ""
+  :author "Satoshi Imai"
+  :license "MIT"
   :depends-on (:alexandria)
   :components ((:module "src"
                 :components
                 ((:file "parse-float")
                  (:file "cl-libsvm-format" :depends-on ("parse-float")))))
-  :description ""
+  :description "A fast LibSVM data format reader for Common Lisp"
   :long-description
   #.(read-file-string
      (subpathname *load-pathname* "README.org"))
