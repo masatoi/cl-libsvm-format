@@ -4,8 +4,8 @@
 
 (defsystem "cl-libsvm-format-test"
   :defsystem-depends-on ("prove-asdf")
-  :author ""
-  :license ""
+  :author "Satoshi Imai"
+  :license "MIT"
   :depends-on ("cl-libsvm-format"
                "prove")
   :components ((:module "tests"
