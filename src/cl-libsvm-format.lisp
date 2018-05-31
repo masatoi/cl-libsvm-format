@@ -161,7 +161,6 @@
                          (setf (state-tag state) :INTERVAL)
                          (go :CONTINUE))
                         ((or (char= c #\Newline) (char= c #\Linefeed))
-                         (print c)
                          (row-finish state)
                          (setf (state-tag state) :START)
                          (go :CONTINUE))
